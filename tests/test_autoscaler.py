@@ -416,6 +416,29 @@ def test_main(monkeypatch):
     with pytest.raises(Exception):
         main()
 
+def test_main_step_down(monkeypatch):
+    autoscale = MagicMock()
+    monkeypatch.setattr('kube_aws_autoscaler.main.autoscale', autoscale)
+    monkeypatch.setattr('sys.argv', ['foo', '--once', '--dry-run', '--scale-down-step-fixed=0'])
+    with pytest.raises(ValueError) as err:
+        main()
+    assert 'Invalid scale-down-step-fixed value: 0' in str(err.value)
+
+    monkeypatch.setattr('sys.argv', ['foo', '--once', '--dry-run', '--scale-down-step-fixed=-1'])
+    with pytest.raises(ValueError) as err:
+        main()
+    assert 'Invalid scale-down-step-fixed value: -1' in str(err.value)
+
+    monkeypatch.setattr('sys.argv', ['foo', '--once', '--dry-run', '--scale-down-step-percentage=-0.0001'])
+    with pytest.raises(ValueError) as err:
+        main()
+    assert 'Invalid scale-down-step-percentage value: -0.0001' in str(err.value)
+
+    monkeypatch.setattr('sys.argv', ['foo', '--once', '--dry-run', '--scale-down-step-percentage=1.0001'])
+    with pytest.raises(ValueError) as err:
+        main()
+    assert 'Invalid scale-down-step-percentage value: 1.0001' in str(err.value)
+
 
 def test_format_resource():
     assert format_resource(1, 'cpu') == '1.0'
@@ -446,6 +469,8 @@ def test_slow_down_downscale():
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}, {}]}, 1, 0.0) == {'a1': 2}
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}], ('a1', 'z2'): [{}]}, 1, 0.0) == {'a1': 2}
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}], ('a1', 'z2'): [{}, {}]}, 1, 0.0) == {'a1': 3}
+    assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}, {}], ('a1', 'z2'): [{}, {}]}, 1, 0.0) == {'a1': 4}
+    assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}, {}], ('a1', 'z2'): [{}, {}, {}]}, 1, 0.0) == {'a1': 5}
 
     # test with 1 step fixed and 1% step percentage (same as above)
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}]}, 1, 0.01) == {'a1': 1}
@@ -453,6 +478,8 @@ def test_slow_down_downscale():
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}, {}]}, 1, 0.01) == {'a1': 2}
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}], ('a1', 'z2'): [{}]}, 1, 0.01) == {'a1': 2}
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}], ('a1', 'z2'): [{}, {}]}, 1, 0.01) == {'a1': 3}
+    assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}, {}], ('a1', 'z2'): [{}, {}]}, 1, 0.0) == {'a1': 4}
+    assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}, {}, {}], ('a1', 'z2'): [{}, {}, {}]}, 1, 0.0) == {'a1': 5}
 
     # test with 1 step fixed and 50% step percentage
     assert slow_down_downscale({'a1': 1}, {('a1', 'z1'): [{}]}, 1, 0.5) == {'a1': 1}

@@ -434,9 +434,13 @@ def main():
 
     # validate scale-down-step values
     if args.scale_down_step_fixed < 1:
-        logger.exception('Invalid scale-down-step-fixed value: {}', args.scale_down_step_fixed)
+        msg = 'Invalid scale-down-step-fixed value: {}'.format(args.scale_down_step_fixed)
+        logger.exception(msg)
+        raise ValueError(msg)
     if args.scale_down_step_percentage < 0 or args.scale_down_step_percentage > 1:
-        logger.exception('Invalid scale-down-step-percentage value: {}', args.scale_down_step_percentage)
+        msg = 'Invalid scale-down-step-percentage value: {}'.format(args.scale_down_step_percentage)
+        logger.exception(msg)
+        raise ValueError(msg)
 
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG if args.debug else logging.INFO)
     logging.getLogger('botocore').setLevel(logging.WARN)
