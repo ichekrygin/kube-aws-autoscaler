@@ -417,8 +417,6 @@ def test_main(monkeypatch):
         main()
 
 def test_main_step_down(monkeypatch):
-    autoscale = MagicMock()
-    monkeypatch.setattr('kube_aws_autoscaler.main.autoscale', autoscale)
     monkeypatch.setattr('sys.argv', ['foo', '--once', '--dry-run', '--scale-down-step-fixed=0'])
     with pytest.raises(ValueError) as err:
         main()
